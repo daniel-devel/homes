@@ -4,6 +4,11 @@ import me.minecraft_server.homes.Homes;
 import me.minecraft_server.homes.exceptions.NotUniquelyIdentifiableException;
 import me.minecraft_server.homes.exceptions.RegisteredPlayerNotFoundException;
 import me.minecraft_server.homes.util.HomeTarget;
+import net.md_5.bungee.api.ChatColor;
+import net.md_5.bungee.api.chat.ClickEvent;
+import net.md_5.bungee.api.chat.ComponentBuilder;
+import net.md_5.bungee.api.chat.HoverEvent;
+import net.md_5.bungee.api.chat.hover.content.Text;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -71,7 +76,15 @@ public class SetHomeCommand implements CommandExecutor, TabCompleter {
             } else if (home instanceof HomeTarget.Identifier || override) {
                 sender.sendMessage("§5§lHomes §8| §cAn unknown error occurred.");
             } else {
-                sender.sendMessage("§5§lHomes §8| §cCould not add home §d" + home.toHumanReadable() + "§c, maybe it already exists? Try to override it with: §d/sethome " + home.toHumanReadable() + " override");
+                final var overrideCommand = "/sethome " + home.toHumanReadable() + " override";
+                sender.spigot().sendMessage(new ComponentBuilder("Homes").color(ChatColor.DARK_PURPLE).bold(true)
+                        .append(" | ").color(ChatColor.DARK_GRAY).bold(false)
+                        .append("Could not add home ").color(ChatColor.RED)
+                        .append(home.toHumanReadable()).color(ChatColor.LIGHT_PURPLE)
+                        .append(", maybe it already exists? Try to override it with: ").color(ChatColor.RED)
+                        .append(overrideCommand).color(ChatColor.LIGHT_PURPLE).event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, overrideCommand))
+                                .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text("Click here to override an existing home.")))
+                        .create());
             }
         }, syncExecutor);
 
