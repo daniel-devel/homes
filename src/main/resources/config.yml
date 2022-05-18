@@ -1,0 +1,14 @@
+# The name of the server the plugin is running on. Used to inter mitigate issues with homes on multiple servers, so players don't teleport to homes not on the server.
+server: CityBuild
+
+# This home is used as the default home if you don't specify any in the commands '/home' and '/sethome'.
+default_home: default
+
+# This specifies what database to use. Note: At the moment only mysql is supported and type is actually ignored.
+database:
+  type: mysql
+  host: localhost
+  port: 3306
+  database: homes
+  username: root
+  password: password

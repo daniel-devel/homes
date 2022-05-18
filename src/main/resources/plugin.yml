@@ -1,0 +1,75 @@
+name: '${project.name}'
+version: '${project.version}'
+main: me.minecraft_server.homes.Homes
+api-version: 1.18
+author: Minecraft_Server
+description: '${project.description}'
+
+commands:
+  home:
+    usage: /<command> [[owner:]name|@id] [player]
+    description: Teleports you or a player to a home. No names means default name, can be set in the config. You can teleport a different player to that home, without waiting time.
+    permission: homes.use
+  sethome:
+    usage: /<command> [[owner:]name|@id] override
+    description: Sets a home identified by the name you entered. Can override an existing home, but must be confirmed. No names means default name, can be set in the config.
+    permission: homes.use
+  homes:
+    usage: /<command> [player]
+    description: Lists all homes. With a specific permission even homes of a different player.
+    permission: homes.use
+  delhome:
+    usage: /<command> <[owner:]name|@id>
+    description: Deletes a home. With a specific permission even homes of a different player.
+    permission: homes.use
+  invhome:
+    usage: /<command> <[owner:]name|@id> <player>
+    description: Invites a player to a home. With a specific permission even to homes of a different player. You can only have one pending invite to a player.
+    permission: homes.use
+  acpthome:
+    usage: /<command> <player>
+    description: Accepts an invite to a home of a player.
+    permission: homes.use
+  declhome:
+    usage: /<command> <player>
+    description: Declines an invite to a home of a player
+    permission: homes.use
+
+permissions:
+  homes.*:
+    default: op
+    description: Allows to use everything.
+    children:
+    - homes.admin.*
+    - homes.use
+    - homes.instant
+    - homes.gui
+  homes.use:
+    default: true
+    description: Allows to use all commands (no admin functionality)
+  homes.instant:
+    default: op
+    description: Teleports a player instantly to a home. This only applies to the command '/home'.
+  homes.gui:
+    default: true
+    description: Allows players to view a gui of their homes.
+  homes.admin.*:
+    default: op
+    description: Allows to use every admin functionality.
+    children:
+    - homes.admin.info
+    - homes.admin.teleport
+    - homes.admin.use
+    - homes.admin.edit
+  homes.admin.info:
+    default: op
+    description: Allows to view all homes of a different player.
+  homes.admin.teleport:
+    default: op
+    description: Allows a player to teleport a different player to a home instantly, even if no one has the 'homes.instant' permission.
+  homes.admin.use:
+    default: op
+    description: Allows a player to use foreign homes in his commands excluding modification.
+  homes.admin.edit:
+    default: op
+    description: Allows a player to modify foreign homes.
