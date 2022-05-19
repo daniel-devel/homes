@@ -23,7 +23,7 @@ commands:
     description: Deletes a home. With a specific permission even homes of a different player.
     permission: homes.use
   invhome:
-    usage: /<command> <[owner:]name|@id> <player>
+    usage: /<command> <[owner:]name|@id> <player> [player] ...
     description: Invites a player to a home. With a specific permission even to homes of a different player. You can only have one pending invite to a player.
     permission: homes.use
   acpthome:

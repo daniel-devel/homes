@@ -3,6 +3,7 @@ package me.minecraft_server.homes.database;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.google.common.collect.ImmutableBiMap;
+import me.minecraft_server.homes.dto.HomeEntry;
 import me.minecraft_server.homes.dto.HomeLocation;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -115,6 +116,34 @@ public class SQLDatabase implements IDatabase {
             e.printStackTrace();
         }
         return Collections.emptyMap(); // Some error occurred.
+    }
+
+    @Override
+    public @NotNull List<HomeEntry> getHomeEntries(@NotNull UUID pOwner) {
+        try (final var connection = mSource.getConnection();
+             final var statement = connection.prepareStatement(
+                     "SELECT `homeId`, `name`, `server`, `world`, `x`, `y`, `z`, `yaw`, `pitch` FROM `Homes` WHERE `uniqueId` = ?;")) {
+            statement.setBytes(1, toBytes(pOwner));
+            try (final var result = statement.executeQuery()) {
+                final var list = new ArrayList<HomeEntry>();
+                while (result.next()) {
+                    final var homeId = result.getInt(1);
+                    final var name = result.getString(2);
+                    final var server = result.getString(3);
+                    final var world = result.getString(4);
+                    final var x = result.getDouble(5);
+                    final var y = result.getDouble(6);
+                    final var z = result.getDouble(7);
+                    final var yaw = result.getFloat(8);
+                    final var pitch = result.getFloat(9);
+                    list.add(new HomeEntry(homeId, name, new HomeLocation(x, y, z, yaw, pitch, world, server)));
+                }
+                return list;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return Collections.emptyList(); // Some error occurred.
     }
 
     @Override

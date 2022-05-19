@@ -1,6 +1,7 @@
 package me.minecraft_server.homes.database;
 
 import com.google.common.collect.BiMap;
+import me.minecraft_server.homes.dto.HomeEntry;
 import me.minecraft_server.homes.dto.HomeLocation;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -32,6 +33,13 @@ public interface IDatabase {
      * @return A map of players homes mapped by name to location. Can be empty if the player has no homes.
      */
     @NotNull Map<String, HomeLocation> getHomes(@NotNull final UUID pOwner);
+
+    /**
+     * Gets all homes of a player with their names and ids.
+     * @param pOwner The player whose homes to retrieve.
+     * @return A list of players homes with ids and names. Can be empty if the player has no homes.
+     */
+    @NotNull List<HomeEntry> getHomeEntries(@NotNull UUID pOwner);
 
     /**
      * Gets all homes ids of a player bi-mapped to their names.

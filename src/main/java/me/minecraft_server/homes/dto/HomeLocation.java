@@ -30,6 +30,8 @@ public class HomeLocation {
         mX = pX;
         mY = pY;
         mZ = pZ;
+        mYaw = pYaw;
+        mPitch = pPitch;
         mWorld = pWorld;
         mServer = pServer;
     }

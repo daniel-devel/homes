@@ -10,6 +10,7 @@ import me.minecraft_server.homes.Homes;
 import me.minecraft_server.homes.database.SQLDataSource;
 import me.minecraft_server.homes.database.SQLDatabase;
 import me.minecraft_server.homes.database.impl.MySQLDatabase;
+import me.minecraft_server.homes.dto.HomeEntry;
 import me.minecraft_server.homes.dto.HomeLocation;
 import me.minecraft_server.homes.exceptions.HomeNotFoundException;
 import me.minecraft_server.homes.exceptions.NotUniquelyIdentifiableException;
@@ -31,22 +32,17 @@ import java.util.concurrent.ExecutionException;
 
 public final class HomesService implements Listener {
 
-    @NotNull
-    private final SQLDataSource source;
+    private @NotNull final SQLDataSource source;
 
-    @NotNull
-    private final SQLDatabase database;
+    private @NotNull final SQLDatabase database;
 
     @Getter
-    @NotNull
-    private final String server;
+    private @NotNull final String server;
 
     @Getter
-    @NotNull
-    private final String defaultHome;
+    private @NotNull final String defaultHome;
 
-    @NotNull
-    private final Homes plugin;
+    private @NotNull final Homes plugin;
 
     public HomesService(@NotNull final Homes pPlugin) {
         this.plugin = pPlugin;
@@ -158,12 +154,7 @@ public final class HomesService implements Listener {
                 }
 
                 case HomeTarget.ForeignHomeName foreignName -> {
-                    final List<UUID> playerUniqueIds = cachedPlayerNames.get(foreignName.owner());
-                    if (playerUniqueIds.size() == 0)
-                        throw new RegisteredPlayerNotFoundException(foreignName.owner());
-                    else if (playerUniqueIds.size() > 1)
-                        throw new NotUniquelyIdentifiableException(foreignName.owner());
-                    final var homeId = cachedPlayerHomes.get(playerUniqueIds.get(0)).inverse().get(foreignName.name());
+                    final var homeId = cachedPlayerHomes.get(getPlayerName(foreignName.owner())).inverse().get(foreignName.name());
                     if (homeId == null)
                         throw new HomeNotFoundException(foreignName);
                     return homeId;
@@ -251,16 +242,7 @@ public final class HomesService implements Listener {
             }
 
             case HomeTarget.ForeignHomeName foreignName -> {
-                try {
-                    final var playerUniqueIds = cachedPlayerNames.get(foreignName.owner());
-                    if (playerUniqueIds.size() == 0)
-                        throw new RegisteredPlayerNotFoundException(foreignName.owner());
-                    else if (playerUniqueIds.size() > 1)
-                        throw new NotUniquelyIdentifiableException(foreignName.owner());
-                    return setHomeLocationAndInvalidate(playerUniqueIds.get(0), foreignName.name(), location, pOverride);
-                } catch (ExecutionException e) {
-                    throw new RegisteredPlayerNotFoundException(foreignName.owner(), e);
-                }
+                return setHomeLocationAndInvalidate(getPlayerName(foreignName.owner()), foreignName.name(), location, pOverride);
             }
 
             default -> throw new UnsupportedOperationException("Not implemented, yet.");
@@ -310,20 +292,32 @@ public final class HomesService implements Listener {
             }
 
             case HomeTarget.ForeignHomeName foreignName -> {
-                try {
-                    final var playerUniqueIds = cachedPlayerNames.get(foreignName.owner());
-                    if (playerUniqueIds.size() == 0)
-                        throw new RegisteredPlayerNotFoundException(foreignName.owner());
-                    else if (playerUniqueIds.size() > 1)
-                        throw new NotUniquelyIdentifiableException(foreignName.owner());
-                    return deleteHomeLocationAndInvalidate(playerUniqueIds.get(0), foreignName.name());
-                } catch (ExecutionException e) {
-                    throw new RegisteredPlayerNotFoundException(foreignName.owner(), e);
-                }
+                return deleteHomeLocationAndInvalidate(getPlayerName(foreignName.owner()), foreignName.name());
             }
 
             default -> throw new UnsupportedOperationException("Not implemented, yet");
 
+        }
+    }
+
+    /**
+     * Converts player name to unique id.
+     * @param pUsername The username to convert.
+     * @return The unique id of the player.
+     * @throws RegisteredPlayerNotFoundException The player is not registered or an exception occurred
+     *                                           retrieving the unique ids form the database.
+     * @throws NotUniquelyIdentifiableException The username is registered for multiple usernames.
+     */
+    public @NotNull UUID getPlayerName(@NotNull final String pUsername) throws RegisteredPlayerNotFoundException, NotUniquelyIdentifiableException {
+        try {
+            final var playerUniqueIds = cachedPlayerNames.get(pUsername);
+            if (playerUniqueIds.size() == 0)
+                throw new RegisteredPlayerNotFoundException(pUsername);
+            else if (playerUniqueIds.size() > 1)
+                throw new NotUniquelyIdentifiableException(pUsername);
+            return playerUniqueIds.get(0);
+        } catch (ExecutionException e) {
+            throw new RegisteredPlayerNotFoundException(pUsername);
         }
     }
 
@@ -427,6 +421,46 @@ public final class HomesService implements Listener {
         if (pPermissible instanceof Player)
             return CommandUtils.getPossibleCompletion(pArgument, plugin.getHomesService().getHomeNamesAsync(((Player) pPermissible).getUniqueId()));
         return Collections.emptyList();
+    }
+
+    /**
+     * Gets all homes of a player, cached if possible.
+     * @param pOwner The owner whose homes to get.
+     * @return A list of all homes.
+     */
+    public @NotNull List<HomeEntry> getEntries(@NotNull final UUID pOwner) {
+        try {
+
+            final var list = new ArrayList<HomeEntry>();
+            final var homes = cachedPlayerHomes.get(pOwner);
+            boolean everythingWasCached = true;
+
+            // Try to get every home from the cache.
+            for (final var home : homes.entrySet()) {
+                final var location = cachedLocations.getIfPresent(home.getKey());
+                if (location == null) {
+                    everythingWasCached = false;
+                    break;
+                } else {
+                    list.add(new HomeEntry(home.getKey(), home.getValue(), location));
+                }
+            }
+
+            // Nice, we don't need to fetch anything!
+            if (everythingWasCached)
+                return list;
+
+            // Just get every home the player has and cache it for the next time.
+            // We do it like this, because we don't know how many homes are missing,
+            // and we don't want to call the database multiple times, so we do this instead.
+            // In the worst case this will be called every five minutes which isn't bad.
+            final var result = database.getHomeEntries(pOwner);
+            result.forEach(entry -> cachedLocations.put(entry.homeId(), entry.location()));
+            return result;
+
+        } catch (ExecutionException e) {
+            throw new RuntimeException(e);
+        }
     }
 
 }
