@@ -6,8 +6,8 @@ import org.junit.jupiter.api.*;
 
 import java.sql.SQLException;
 import java.util.UUID;
-import java.util.concurrent.ExecutionException;
 
+@SuppressWarnings({"SqlNoDataSourceInspection", "SqlResolve", "SqlWithoutWhere"})
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class SQLDatabaseTests {
 
@@ -44,7 +44,7 @@ public class SQLDatabaseTests {
     }
 
     @Test
-    public void playerTest() throws ExecutionException, InterruptedException {
+    public void playerTest() {
 
         // Check registering players
         final var inUniqueId = new UUID(0, 1);
@@ -90,7 +90,7 @@ public class SQLDatabaseTests {
     }
 
     @Test
-    public void checkHomes() throws ExecutionException, InterruptedException {
+    public void checkHomes() {
 
         final var uniqueId_A = new UUID(0, 1);
         final var uniqueId_B = new UUID(0, 2);
@@ -134,7 +134,7 @@ public class SQLDatabaseTests {
 
     }
 
-    private void checkHomes_AddHomes(UUID uniqueId, String homeName_A, HomeLocation home_A, String homeName_B, HomeLocation home_B) throws ExecutionException, InterruptedException {
+    private void checkHomes_AddHomes(UUID uniqueId, String homeName_A, HomeLocation home_A, String homeName_B, HomeLocation home_B) {
 
         // Assertions for tests
         Assertions.assertNotEquals(homeName_A, homeName_B, "This is a mistake in the tests. They should differ or the next tests will fail.");
@@ -150,7 +150,7 @@ public class SQLDatabaseTests {
 
     }
 
-    private void checkHomes_AddHome(UUID uniqueId, String homeName, HomeLocation home) throws ExecutionException, InterruptedException {
+    private void checkHomes_AddHome(UUID uniqueId, String homeName, HomeLocation home) {
         final var homeSuccess= database.addHome(uniqueId, homeName, home);
         Assertions.assertTrue(homeSuccess, "Adding homes must succeed here!");
         final var outHome = database.getHome(uniqueId, homeName);
@@ -159,7 +159,7 @@ public class SQLDatabaseTests {
         Assertions.assertFalse(homeFail, "Adding homes must fail here, because we already have that home!");
     }
 
-    private void checkHomes_SetHome(UUID uniqueId, String homeName, HomeLocation home) throws ExecutionException, InterruptedException {
+    private void checkHomes_SetHome(UUID uniqueId, String homeName, HomeLocation home) {
         database.setHome(uniqueId, homeName, home);
         final var outHome = database.getHome(uniqueId, homeName);
         Assertions.assertEquals(home, outHome, "Homes differ!");

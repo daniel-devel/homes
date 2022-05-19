@@ -1,17 +1,14 @@
 package me.minecraft_server.homes.database.impl;
 
+import lombok.experimental.UtilityClass;
 import me.minecraft_server.homes.database.ISQLConfigurator;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * Used to create a connection to a h2 database. Intended to be used in tests or as a file database.
  */
+@UtilityClass
 public final class H2Database {
-
-    /**
-     * Disable construction of this class.
-     */
-    private H2Database() { }
 
     /**
      * Create a memory database.

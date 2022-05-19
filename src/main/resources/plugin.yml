@@ -17,7 +17,7 @@ commands:
   homes:
     usage: /<command> [player]
     description: Lists all homes. With a specific permission even homes of a different player.
-    permission: homes.use
+    permission: homes.gui
   delhome:
     usage: /<command> <[owner:]name|@id>
     description: Deletes a home. With a specific permission even homes of a different player.

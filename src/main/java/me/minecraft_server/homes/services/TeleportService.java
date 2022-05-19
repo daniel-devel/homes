@@ -1,5 +1,6 @@
 package me.minecraft_server.homes.services;
 
+import lombok.RequiredArgsConstructor;
 import me.minecraft_server.homes.Homes;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -14,14 +15,11 @@ import org.jetbrains.annotations.NotNull;
 import java.util.HashMap;
 import java.util.Map;
 
+@RequiredArgsConstructor
 public final class TeleportService implements Listener {
 
     @NotNull
     private final Homes plugin;
-
-    public TeleportService(@NotNull final Homes plugin) {
-        this.plugin = plugin;
-    }
 
     @NotNull
     private final Map<Player, PendingTeleport> pendingTeleports = new HashMap<>();

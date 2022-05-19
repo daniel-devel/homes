@@ -1,6 +1,6 @@
 package me.minecraft_server.homes.exceptions;
 
-import me.minecraft_server.homes.util.HomeTarget;
+import me.minecraft_server.homes.services.homes.HomeTarget;
 import org.jetbrains.annotations.NotNull;
 
 public class HomeNotFoundException extends RuntimeException {

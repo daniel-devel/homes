@@ -1,5 +1,7 @@
 package me.minecraft_server.homes.dto;
 
+import lombok.*;
+import lombok.experimental.Accessors;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.jetbrains.annotations.NotNull;
@@ -7,129 +9,46 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 
+@Data @Accessors(prefix = "m")
 public class HomeLocation {
 
-    private double x, y, z;
-    private float yaw, pitch;
-    private @NotNull String world;
-    private @NotNull String server;
+    private double mX, mY, mZ;
+    private float mYaw, mPitch;
+    private @NotNull String mWorld;
+    private @NotNull String mServer;
 
 
     /**
      * Constructs a home with the given parameters.
-     * @param x The x coordinate.
-     * @param y The y coordinate.
-     * @param z The z coordinate.
-     * @param world The world coordinate.
-     * @param server The server where the home is in.
+     * @param pX The x coordinate.
+     * @param pY The y coordinate.
+     * @param pZ The z coordinate.
+     * @param pWorld The world coordinate.
+     * @param pServer The server where the home is in.
      */
-    public HomeLocation(final double x, final double y, final double z, final float yaw, final float pitch, @NotNull final String world, @NotNull final String server) {
-        this.x = x;
-        this.y = y;
-        this.z = z;
-        this.yaw = yaw;
-        this.pitch = pitch;
-        this.world = world;
-        this.server = server;
+    public HomeLocation(final double pX, final double pY, final double pZ, final float pYaw, final float pPitch, @NotNull final String pWorld, @NotNull final String pServer) {
+        mX = pX;
+        mY = pY;
+        mZ = pZ;
+        mWorld = pWorld;
+        mServer = pServer;
     }
 
     /**
      * Converts a bukkit location to a home location.
-     * @param bukkitLocation The bukkit location to convert.
+     * @param pBukkitLocation The bukkit location to convert.
      */
-    public HomeLocation(@NotNull final Location bukkitLocation, @NotNull final String server) {
-        this(bukkitLocation.getX(), bukkitLocation.getY(), bukkitLocation.getZ(),
-                bukkitLocation.getYaw(), bukkitLocation.getPitch(),
-                Objects.requireNonNull(bukkitLocation.getWorld()).getName(), server);
+    public HomeLocation(@NotNull final Location pBukkitLocation, @NotNull final String pServer) {
+        this(pBukkitLocation.getX(), pBukkitLocation.getY(), pBukkitLocation.getZ(),
+                pBukkitLocation.getYaw(), pBukkitLocation.getPitch(),
+                Objects.requireNonNull(pBukkitLocation.getWorld()).getName(), pServer);
     }
 
     public @Nullable Location toBukkitLocation() {
-        final var world = Bukkit.getWorld(this.world);
+        final var world = Bukkit.getWorld(mWorld);
         if (world == null)
             return null;
-        return new Location(world, x, y, z, yaw, pitch);
-    }
-
-    public double getX() {
-        return x;
-    }
-
-    public void setX(final double x) {
-        this.x = x;
-    }
-
-    public double getY() {
-        return y;
-    }
-
-    public void setY(final double y) {
-        this.y = y;
-    }
-
-    public double getZ() {
-        return z;
-    }
-
-    public void setZ(final double z) {
-        this.z = z;
-    }
-
-    public @NotNull String getServer() {
-        return server;
-    }
-
-    public void setServer(@NotNull final String server) {
-        this.server = server;
-    }
-
-    public @NotNull String getWorld() {
-        return world;
-    }
-
-    public void setWorld(@NotNull final String world) {
-        this.world = world;
-    }
-
-    public float getYaw() {
-        return yaw;
-    }
-
-    public void setYaw(float yaw) {
-        this.yaw = yaw;
-    }
-
-    public float getPitch() {
-        return pitch;
-    }
-
-    public void setPitch(float pitch) {
-        this.pitch = pitch;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        HomeLocation that = (HomeLocation) o;
-        return Double.compare(that.x, x) == 0 && Double.compare(that.y, y) == 0 && Double.compare(that.z, z) == 0 && Float.compare(that.yaw, yaw) == 0 && Float.compare(that.pitch, pitch) == 0 && world.equals(that.world) && server.equals(that.server);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(x, y, z, yaw, pitch, world, server);
-    }
-
-    @Override
-    public String toString() {
-        return "HomeLocation{" +
-                "x=" + x +
-                ", y=" + y +
-                ", z=" + z +
-                ", yaw=" + yaw +
-                ", pitch=" + pitch +
-                ", world='" + world + '\'' +
-                ", server='" + server + '\'' +
-                '}';
+        return new Location(world, mX, mY, mZ, mYaw, mPitch);
     }
 
 }

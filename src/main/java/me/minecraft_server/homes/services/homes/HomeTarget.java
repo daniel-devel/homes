@@ -1,9 +1,8 @@
-package me.minecraft_server.homes.util;
+package me.minecraft_server.homes.services.homes;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Objects;
 import java.util.UUID;
 
 public sealed interface HomeTarget {
@@ -18,19 +17,6 @@ public sealed interface HomeTarget {
         @Override
         public boolean isForeign() {
             return true;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            Identifier that = (Identifier) o;
-            return value == that.value;
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(value);
         }
 
     }
@@ -53,18 +39,6 @@ public sealed interface HomeTarget {
             return true;
         }
 
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            ForeignHomeName that = (ForeignHomeName) o;
-            return name.equalsIgnoreCase(that.name) && owner.equalsIgnoreCase(that.owner);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(name.toLowerCase(), owner.toLowerCase());
-        }
     }
 
     record ForeignHomeNameUnique(@NotNull String name, @NotNull UUID owner) implements HomeName {
@@ -77,19 +51,6 @@ public sealed interface HomeTarget {
         @Override
         public boolean isForeign() {
             return true;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            ForeignHomeNameUnique that = (ForeignHomeNameUnique) o;
-            return name.equalsIgnoreCase(that.name) && owner.equals(that.owner);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(name.toLowerCase(), owner);
         }
 
     }
@@ -106,29 +67,21 @@ public sealed interface HomeTarget {
             return false;
         }
 
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            OwnHomeName that = (OwnHomeName) o;
-            return name.equalsIgnoreCase(that.name);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(name.toLowerCase());
-        }
-
     }
 
-    static @Nullable HomeTarget parseString(@NotNull final String unknownId) {
-        if (unknownId.startsWith("@"))
+    /**
+     * Parses the string to a home target.
+     * @param pStringTarget The string to parse.
+     * @return A home target to that string. Can be null, which means the string could not be parsed successfully.
+     */
+    static @Nullable HomeTarget parseString(@NotNull final String pStringTarget) {
+        if (pStringTarget.startsWith("@"))
             try {
-                return new Identifier(Integer.parseInt(unknownId.substring(1)));
+                return new Identifier(Integer.parseInt(pStringTarget.substring(1)));
             } catch (NumberFormatException e) {
                 return null;
             }
-        final var split = unknownId.split(":", 2);
+        final var split = pStringTarget.split(":", 2);
         if (split.length == 1)
             return new OwnHomeName(split[0]);
         else if (split[0].length() <= 16)
@@ -141,8 +94,16 @@ public sealed interface HomeTarget {
 
     }
 
+    /**
+     * Converts the target to a human-readable from.
+     * @return The converted string.
+     */
     @NotNull String toHumanReadable();
 
+    /**
+     * @return Whether this target can be parsed without a player.
+     *         Used to determine if console can use this or not.
+     */
     boolean isForeign();
 
 }

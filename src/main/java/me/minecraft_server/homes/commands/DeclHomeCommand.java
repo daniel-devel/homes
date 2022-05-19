@@ -1,5 +1,6 @@
 package me.minecraft_server.homes.commands;
 
+import lombok.RequiredArgsConstructor;
 import me.minecraft_server.homes.Homes;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -12,14 +13,11 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Collections;
 import java.util.List;
 
+@RequiredArgsConstructor
 public class DeclHomeCommand  implements CommandExecutor, TabCompleter {
 
     @NotNull
     private final Homes plugin;
-
-    public DeclHomeCommand(@NotNull final Homes pPlugin) {
-        plugin = pPlugin;
-    }
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {

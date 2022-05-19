@@ -5,6 +5,7 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.BiMap;
+import lombok.Getter;
 import me.minecraft_server.homes.Homes;
 import me.minecraft_server.homes.database.SQLDataSource;
 import me.minecraft_server.homes.database.SQLDatabase;
@@ -14,7 +15,7 @@ import me.minecraft_server.homes.exceptions.HomeNotFoundException;
 import me.minecraft_server.homes.exceptions.NotUniquelyIdentifiableException;
 import me.minecraft_server.homes.exceptions.RegisteredPlayerNotFoundException;
 import me.minecraft_server.homes.util.CommandUtils;
-import me.minecraft_server.homes.util.HomeTarget;
+import me.minecraft_server.homes.services.homes.HomeTarget;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -31,22 +32,24 @@ import java.util.concurrent.ExecutionException;
 public final class HomesService implements Listener {
 
     @NotNull
-    private final SQLDataSource mSource;
+    private final SQLDataSource source;
 
     @NotNull
-    private final SQLDatabase mDatabase;
+    private final SQLDatabase database;
+
+    @Getter
+    @NotNull
+    private final String server;
+
+    @Getter
+    @NotNull
+    private final String defaultHome;
 
     @NotNull
-    private final String mServer;
-
-    @NotNull
-    private final String mDefaultHome;
-
-    @NotNull
-    private final Homes mPlugin;
+    private final Homes plugin;
 
     public HomesService(@NotNull final Homes pPlugin) {
-        this.mPlugin = pPlugin;
+        this.plugin = pPlugin;
 
         // Get config
         final var config = pPlugin.getConfig();
@@ -57,12 +60,12 @@ public final class HomesService implements Listener {
         final var database = config.getString("database.database", "homes");
         final var username = config.getString("database.username", "username");
         final var password = config.getString("database.password", "password");
-        this.mSource = new SQLDataSource(MySQLDatabase.connection(host, port, database, username, password));
-        this.mDatabase = new SQLDatabase(this.mSource);
+        this.source = new SQLDataSource(MySQLDatabase.connection(host, port, database, username, password));
+        this.database = new SQLDatabase(this.source);
 
         // Configure other properties
-        this.mServer = config.getString("server", "");
-        this.mDefaultHome = config.getString("default_home", "default");
+        this.server = config.getString("server", "");
+        this.defaultHome = config.getString("default_home", "default");
 
     }
 
@@ -75,7 +78,7 @@ public final class HomesService implements Listener {
             .build(new CacheLoader<>() {
                 @Override
                 public @NotNull HomeLocation load(@NotNull final Integer pHomeId) throws HomeNotFoundException {
-                    final var home = mDatabase.getHome(pHomeId);
+                    final var home = database.getHome(pHomeId);
                     if (home == null)
                         throw new HomeNotFoundException(new HomeTarget.Identifier(pHomeId));
                     return home;
@@ -92,7 +95,7 @@ public final class HomesService implements Listener {
             .build(new CacheLoader<>() {
                 @Override
                 public @NotNull BiMap<Integer, String> load(@NotNull UUID pOwner) {
-                    return mDatabase.getPlayerMappedHomes(pOwner);
+                    return database.getPlayerMappedHomes(pOwner);
                 }
             });
 
@@ -106,7 +109,7 @@ public final class HomesService implements Listener {
             .build(new CacheLoader<>() {
                 @Override
                 public @NotNull List<UUID> load(@NotNull String pUsername) {
-                    return mDatabase.getPlayerUniqueId(pUsername);
+                    return database.getPlayerUniqueId(pUsername);
                 }
             });
 
@@ -202,8 +205,8 @@ public final class HomesService implements Listener {
      * @return Whether the action was successful.
      */
     private boolean setHomeLocationAndInvalidate(@NotNull final UUID pOwner, @NotNull final String pName, @NotNull final HomeLocation pLocation, final boolean override) {
-        final var result = override ? mDatabase.setHome(pOwner, pName, pLocation)
-                : mDatabase.addHome(pOwner, pName, pLocation);
+        final var result = override ? database.setHome(pOwner, pName, pLocation)
+                : database.addHome(pOwner, pName, pLocation);
         if (result) {
             try {
                 cachedPlayerHomes.invalidate(pOwner);
@@ -229,11 +232,11 @@ public final class HomesService implements Listener {
      * @throws RegisteredPlayerNotFoundException Thrown if no unique ids can be retrieved for a username.
      */
     public boolean setHomeLocation(@NotNull HomeTarget pHomeTarget, @NotNull Player pSelf, boolean pOverride) throws NotUniquelyIdentifiableException, RegisteredPlayerNotFoundException {
-        final var location = new HomeLocation(pSelf.getLocation(), mServer);
+        final var location = new HomeLocation(pSelf.getLocation(), server);
         switch (pHomeTarget) {
 
             case HomeTarget.Identifier identifier -> {
-                final var result = mDatabase.updateHome(identifier.value(), location);
+                final var result = database.updateHome(identifier.value(), location);
                 if (result)
                     cachedLocations.invalidate(identifier.value());
                 return result;
@@ -272,7 +275,7 @@ public final class HomesService implements Listener {
      * @return Whether the action was successful.
      */
     private boolean deleteHomeLocationAndInvalidate(@NotNull final UUID pOwner, @NotNull final String pName) {
-        final var result = mDatabase.deleteHome(pOwner, pName);
+        final var result = database.deleteHome(pOwner, pName);
         final var map = cachedPlayerHomes.getIfPresent(pOwner);
         if (map != null) {
             final var id = map.inverse().get(pName);
@@ -293,7 +296,7 @@ public final class HomesService implements Listener {
         switch (pHomeTarget) {
 
             case HomeTarget.Identifier identifier -> {
-                final var result = mDatabase.deleteHome(identifier.value());
+                final var result = database.deleteHome(identifier.value());
                 cachedLocations.invalidate(identifier.value());
                 return result;
             }
@@ -328,21 +331,7 @@ public final class HomesService implements Listener {
      * Shutdowns all connections.
      */
     public void shutdown() {
-        mSource.close();
-    }
-
-    /**
-     * @return The default home if no home is specified.
-     */
-    public @NotNull String getDefaultHome() {
-        return mDefaultHome;
-    }
-
-    /**
-     * @return The name of the current server in the config.
-     */
-    public @NotNull String getServer() {
-        return mServer;
+        source.close();
     }
 
     /**
@@ -359,7 +348,7 @@ public final class HomesService implements Listener {
      */
     @EventHandler
     private void OnPlayerJoin(PlayerJoinEvent e) {
-        mDatabase.registerPlayer(e.getPlayer().getUniqueId(), e.getPlayer().getName());
+        database.registerPlayer(e.getPlayer().getUniqueId(), e.getPlayer().getName());
         cachedPlayerHomes.invalidate(e.getPlayer().getUniqueId());
         cachedPlayerNames.invalidate(e.getPlayer().getName());
     }
@@ -373,7 +362,7 @@ public final class HomesService implements Listener {
     public Iterable<String> getHomeNamesAsync(@NotNull UUID pOwner) {
         final var homes = cachedPlayerHomes.getIfPresent(pOwner);
         if (homes == null) {
-            mPlugin.getAsyncExecutor().execute(() -> {
+            plugin.getAsyncExecutor().execute(() -> {
                 try {
                     cachedPlayerHomes.get(pOwner);
                 } catch (ExecutionException ignored) { }
@@ -395,7 +384,7 @@ public final class HomesService implements Listener {
         if (pUsername.length() <= 16) {
             final var playerUniqueIds = cachedPlayerNames.getIfPresent(pUsername);
             if (playerUniqueIds == null) {
-                mPlugin.getAsyncExecutor().execute(() -> {
+                plugin.getAsyncExecutor().execute(() -> {
                     try {
                         final var list = cachedPlayerNames.get(pUsername);
                         if (list.size() == 1)
@@ -431,12 +420,12 @@ public final class HomesService implements Listener {
         if (pPermissible.hasPermission(pForeignPermission)) {
             final var split = pArgument.split(":", 2);
             if (split.length == 2)
-                return CommandUtils.getPossibleCompletion(pArgument, mPlugin.getHomesService().getHomeNamesAsync(split[0]));
+                return CommandUtils.getPossibleCompletion(pArgument, plugin.getHomesService().getHomeNamesAsync(split[0]));
             if (!(pPermissible instanceof Player))
                 return null;
         }
         if (pPermissible instanceof Player)
-            return CommandUtils.getPossibleCompletion(pArgument, mPlugin.getHomesService().getHomeNamesAsync(((Player) pPermissible).getUniqueId()));
+            return CommandUtils.getPossibleCompletion(pArgument, plugin.getHomesService().getHomeNamesAsync(((Player) pPermissible).getUniqueId()));
         return Collections.emptyList();
     }
 

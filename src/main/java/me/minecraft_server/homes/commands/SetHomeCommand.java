@@ -1,9 +1,10 @@
 package me.minecraft_server.homes.commands;
 
+import lombok.RequiredArgsConstructor;
 import me.minecraft_server.homes.Homes;
 import me.minecraft_server.homes.exceptions.NotUniquelyIdentifiableException;
 import me.minecraft_server.homes.exceptions.RegisteredPlayerNotFoundException;
-import me.minecraft_server.homes.util.HomeTarget;
+import me.minecraft_server.homes.services.homes.HomeTarget;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.ComponentBuilder;
@@ -21,14 +22,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
+@RequiredArgsConstructor
 public class SetHomeCommand implements CommandExecutor, TabCompleter {
 
     @NotNull
     private final Homes plugin;
-
-    public SetHomeCommand(@NotNull final Homes plugin) {
-        this.plugin = plugin;
-    }
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {

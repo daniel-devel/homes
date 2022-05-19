@@ -1,5 +1,6 @@
 package me.minecraft_server.homes.services;
 
+import lombok.RequiredArgsConstructor;
 import me.minecraft_server.homes.Homes;
 import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
@@ -13,67 +14,64 @@ import org.jetbrains.annotations.Nullable;
 import java.util.HashMap;
 import java.util.Map;
 
+@RequiredArgsConstructor
 public final class InvitationService implements Listener {
 
     @NotNull
     private final Homes mPlugin;
 
-    public InvitationService(@NotNull final Homes pPlugin) {
-        mPlugin = pPlugin;
-    }
+    @NotNull
+    final Map<String, Map<Player, PendingInvitation>> mSentInvitations = new HashMap<>();
 
     @NotNull
-    final Map<String, Map<Player, PendingInvitation>> sentInvitations = new HashMap<>();
+    final Map<Player, Map<String, PendingInvitation>> mReceivedInvitations = new HashMap<>();
 
-    @NotNull
-    final Map<Player, Map<String, PendingInvitation>> receivedInvitations = new HashMap<>();
-
-    public @Nullable PendingInvitation getInvitation(@NotNull final String sender, @NotNull final Player player) {
-        final var senderLC = sender.toLowerCase();
-        final var senderMap = sentInvitations.get(senderLC);
+    public @Nullable PendingInvitation getInvitation(@NotNull final String pSender, @NotNull final Player pTarget) {
+        final var senderLC = pSender.toLowerCase();
+        final var senderMap = mSentInvitations.get(senderLC);
         if (senderMap == null)
             return null;
-        final var invitation = senderMap.get(player);
+        final var invitation = senderMap.get(pTarget);
         if (invitation != null && invitation.expires < System.currentTimeMillis()) {
-            senderMap.remove(player);
+            senderMap.remove(pTarget);
             if (senderMap.isEmpty())
-                sentInvitations.remove(senderLC);
-            removeReceivedInvitation(senderLC, player);
+                mSentInvitations.remove(senderLC);
+            removeReceivedInvitation(senderLC, pTarget);
             return null;
         }
         return invitation;
     }
 
-    public void createInvitation(@NotNull final CommandSender sender, @NotNull final Player target, @NotNull final Location bukkitLocation) {
-        final var senderLC = sender.getName().toLowerCase();
-        final var invitation = new PendingInvitation(sender, bukkitLocation, System.currentTimeMillis() + 120000L);
-        sentInvitations.computeIfAbsent(senderLC, s -> new HashMap<>()).put(target, invitation);
-        receivedInvitations.computeIfAbsent(target, t -> new HashMap<>()).put(senderLC, invitation);
+    public void createInvitation(@NotNull final CommandSender pSender, @NotNull final Player pTarget, @NotNull final Location pLocation) {
+        final var senderLC = pSender.getName().toLowerCase();
+        final var invitation = new PendingInvitation(pSender, pLocation, System.currentTimeMillis() + 120000L);
+        mSentInvitations.computeIfAbsent(senderLC, s -> new HashMap<>()).put(pTarget, invitation);
+        mReceivedInvitations.computeIfAbsent(pTarget, t -> new HashMap<>()).put(senderLC, invitation);
     }
 
-    public @Nullable PendingInvitation removeInvitation(String sender, Player target) {
-        final var senderLC = sender.toLowerCase();
-        removeSentInvitation(senderLC, target);
-        return removeReceivedInvitation(senderLC, target);
+    public @Nullable PendingInvitation removeInvitation(String pSender, Player pTarget) {
+        final var senderLC = pSender.toLowerCase();
+        removeSentInvitation(senderLC, pTarget);
+        return removeReceivedInvitation(senderLC, pTarget);
     }
 
-    private @Nullable PendingInvitation removeReceivedInvitation(@NotNull final String sender, @NotNull final Player target) {
-        final var map = receivedInvitations.get(target);
+    private @Nullable PendingInvitation removeReceivedInvitation(@NotNull final String pSender, @NotNull final Player pTarget) {
+        final var map = mReceivedInvitations.get(pTarget);
         if (map == null)
             return null;
-        final var inv = map.remove(sender);
+        final var inv = map.remove(pSender);
         if (map.isEmpty())
-            receivedInvitations.remove(target);
+            mReceivedInvitations.remove(pTarget);
         return inv.expires > System.currentTimeMillis() ? inv : null;
     }
 
     private void removeSentInvitation(@NotNull final String sender, @NotNull final Player target) {
-        final var map = sentInvitations.get(sender);
+        final var map = mSentInvitations.get(sender);
         if (map == null)
             return;
         map.remove(target);
         if (map.isEmpty())
-            sentInvitations.remove(sender);
+            mSentInvitations.remove(sender);
         // We don't return here, because we need just one helper method to return the invitation.
         // It doesn't matter which one.
     }
@@ -82,8 +80,8 @@ public final class InvitationService implements Listener {
     private void OnPlayerQuit(PlayerQuitEvent e) {
         final var player = e.getPlayer();
         final var playerSender = player.getName().toLowerCase();
-        sentInvitations.remove(playerSender).keySet().forEach(target -> removeReceivedInvitation(playerSender, target));
-        receivedInvitations.remove(player).keySet().forEach(sender -> removeSentInvitation(sender, player));
+        mSentInvitations.remove(playerSender).keySet().forEach(target -> removeReceivedInvitation(playerSender, target));
+        mReceivedInvitations.remove(player).keySet().forEach(sender -> removeSentInvitation(sender, player));
     }
 
     public record PendingInvitation(@NotNull CommandSender sender, @NotNull Location location, long expires) { }

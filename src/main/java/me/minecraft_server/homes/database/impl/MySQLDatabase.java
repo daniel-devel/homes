@@ -1,17 +1,14 @@
 package me.minecraft_server.homes.database.impl;
 
+import lombok.experimental.UtilityClass;
 import me.minecraft_server.homes.database.ISQLConfigurator;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * Used to create a connection to a MySQL database.
  */
+@UtilityClass
 public final class MySQLDatabase {
-
-    /**
-     * Disable construction of this class.
-     */
-    private MySQLDatabase() { }
 
     /**
      * Creates a configuration to connect to the given mysql database with the provided settings.

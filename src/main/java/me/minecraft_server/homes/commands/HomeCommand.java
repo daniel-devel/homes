@@ -1,10 +1,11 @@
 package me.minecraft_server.homes.commands;
 
+import lombok.RequiredArgsConstructor;
 import me.minecraft_server.homes.Homes;
 import me.minecraft_server.homes.exceptions.HomeNotFoundException;
 import me.minecraft_server.homes.exceptions.NotUniquelyIdentifiableException;
 import me.minecraft_server.homes.exceptions.RegisteredPlayerNotFoundException;
-import me.minecraft_server.homes.util.HomeTarget;
+import me.minecraft_server.homes.services.homes.HomeTarget;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -18,14 +19,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
+@RequiredArgsConstructor
 public class HomeCommand implements CommandExecutor, TabCompleter {
 
     @NotNull
     private final Homes plugin;
-
-    public HomeCommand(@NotNull final Homes plugin) {
-        this.plugin = plugin;
-    }
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
