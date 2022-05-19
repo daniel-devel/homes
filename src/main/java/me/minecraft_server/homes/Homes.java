@@ -112,6 +112,7 @@ public final class Homes extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        saveDefaultConfig();
         reloadConfig();
         loadServices();
         loadCommands();
